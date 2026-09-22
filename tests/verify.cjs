@@ -26,7 +26,7 @@ function environment({ configured = false, storageFails = false, corrupt = false
   }
   const handlers = {};
   const context = vm.createContext({
-    console, Uint32Array, Int16Array, Math, Date, Object, Number, String, JSON, Array, Set,
+    console, Uint32Array, Uint8Array, Int16Array, Math, Date, Object, Number, String, JSON, Array, Set,
     AbortController, setTimeout, clearTimeout, HTMLInputElement: class {},
     crypto: {getRandomValues(array){array[0]=12345;}},
     matchMedia:()=>({matches:false}), requestAnimationFrame(){}, scrollTo(){},
@@ -92,6 +92,10 @@ if (require.main === module) (async()=>{
   ok(run('partida.jugador.vida===84'),'fuera de la zona las colisiones dañan');
   run('actualizar(.1)');
   ok(run('partida.jugador.vida===84'),'invulnerabilidad evita daño cada fotograma');
+  run(`iniciarPartida();actualizar(3.01);partida.plan=[{apareceEn:9999}];partida.siguiente=0;
+    partida.enemigos=ENTRADAS.map((p,i)=>({...TIPOS_MALWARE.troyano,tipo:"troyano",x:p.x,y:p.y,vida:88,vidaMax:88,fase:i,golpe:0}));
+    for(let i=0;i<60*90;i++)actualizar(1/60);`);
+  ok(run(`partida.enemigos.every(e=>{const dx=Math.max(ZONA.x-e.x,0,e.x-(ZONA.x+ZONA.w)),dy=Math.max(ZONA.y-e.y,0,e.y-(ZONA.y+ZONA.h));return Math.hypot(dx,dy)<70;})`),'troyanos grandes recorren todos los pasillos sin atascarse');
   run('iniciarPartida();actualizar(3.01);partida.jugador.x=1000;partida.jugador.y=800;actualizarZona();partida.plan=[{apareceEn:9999}];partida.enemigos=[{...TIPOS_MALWARE.gusano,tipo:"gusano",x:1050,y:800,vida:18,vidaMax:18,velocidad:0,golpe:0}];mouse.x=1050;mouse.y=800;disparar();actualizar(.05)');
   ok(run('partida.enemigos.length===0 && partida.puntos===15 && partida.bajas===1'),'bala mata, suma puntos y registra baja');
   ok(run('partida.particulas.length>0 && partida.textos.length>0'),'baja genera partículas y texto flotante');
