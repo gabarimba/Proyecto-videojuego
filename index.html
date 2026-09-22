@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111312">
+  <meta name="description" content="Call of Malware: protege el sistema en un shooter de supervivencia con tres oleadas procedurales.">
+  <title>Call of Malware — Protocolo de defensa</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./config.js" defer></script>
+  <script src="./procedural.js" defer></script>
+  <script src="./game.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="Call of Malware, inicio"><span class="brand-mark">✳</span> COM<span class="brand-divider">/</span><span class="brand-label">CYBER DEFENSE UNIT</span></a>
+      <span class="course">NUEVAS TECNOLOGÍAS <span>·</span> ISND</span>
+      <button id="sound-button" class="quiet-button" type="button" aria-pressed="true">SONIDO: ON</button>
+    </header>
+
+    <div class="mission-strip"><span><i class="status-dot"></i> PROTOCOLO DE DEFENSA / 001</span><span>HUMANO AL MANDO. SISTEMA EN RIESGO.</span></div>
+
+    <main id="workspace" class="workspace">
+      <section id="lobby" class="briefing" aria-labelledby="game-title">
+        <p class="eyebrow"><span class="orange">//</span> TU SISTEMA. TU ÚLTIMA LÍNEA DE DEFENSA.</p>
+        <h1 id="game-title">CALL OF<br><span>MALWARE</span><span class="title-dot">.</span></h1>
+        <p class="intro">El malware ya está dentro.<br>Conviértete en el antivirus.</p>
+        <p class="mission-copy">Sobrevive <strong>3 oleadas</strong>, elimina las amenazas y mantén la integridad del sistema por encima de cero.</p>
+        <form id="start-form">
+          <label for="team-name">INTEGRANTES <span>/ NOMBRE EN EL RANKING</span></label>
+          <input id="team-name" name="integrantes" maxlength="80" required placeholder="Escribe los nombres de tu equipo" autocomplete="off">
+          <button class="primary-button" type="submit">JUGAR <span>INICIAR PROTOCOLO ↗</span></button>
+        </form>
+        <div class="controls"><div><span class="key-group"><kbd>W</kbd><br><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>MOVERTE</span></div><div><span class="control-icon">⌖</span><span>MOUSE · APUNTAR</span></div><div><span class="control-icon">↖</span><span>CLIC · DISPARAR</span></div></div>
+        <p class="small-note">Mantén clic para disparar · Esc pausa · M silencia<br>Diseñado para teclado y mouse.</p>
+      </section>
+
+      <section class="battlefield" aria-label="Zona de juego">
+        <div class="arena-heading"><span><i class="status-dot"></i> <span id="arena-label">VISTA DEL SISTEMA</span></span><span id="seed-label">ESPERANDO DESPLIEGUE</span></div>
+        <div id="hud" class="hud">
+          <div class="health-block"><div class="stat-label">INTEGRIDAD <strong id="health-text">100 / 100</strong></div><div id="health-meter" class="health-meter" role="progressbar" aria-label="Integridad" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span id="health-fill"></span></div></div>
+          <div><span class="stat-label">PUNTOS</span><strong id="score-text" class="stat-value">0000</strong></div>
+          <div><span class="stat-label">OLEADA</span><strong class="stat-value"><span id="wave-text">01</span><span class="muted"> / 03</span></strong></div>
+          <button id="pause-button" class="quiet-button" type="button" disabled>PAUSA Ⅱ</button>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="game-canvas" width="1000" height="650" tabindex="0" aria-label="Arena: usa W A S D para moverte, mouse para apuntar y clic izquierdo para disparar.">Tu navegador necesita soporte de Canvas para jugar.</canvas>
+          <div id="preview-tag" class="preview-tag"><span class="tiny-cross">+</span> ENTORNO HOSTIL DETECTADO <span class="tiny-cross">+</span></div>
+          <section id="transition" class="center-overlay" hidden aria-live="polite"><p class="eyebrow" id="transition-kicker">SISTEMA LISTO</p><h2 id="transition-title">OLEADA 01</h2><p id="transition-copy">Estableciendo perímetro…</p><strong id="transition-count">3</strong></section>
+          <section id="pause-screen" class="center-overlay" hidden><p class="eyebrow">PROTOCOLO EN ESPERA</p><h2>PAUSA</h2><p>Respira. El sistema puede esperar.</p><button id="resume-button" class="primary-button" type="button">CONTINUAR <span>↗</span></button></section>
+          <section id="end-screen" class="end-overlay" hidden aria-labelledby="end-title">
+            <div class="end-summary"><p id="end-kicker" class="eyebrow"></p><h2 id="end-title"></h2><p id="end-copy"></p><p class="end-score"><strong id="final-score">0</strong> PUNTOS TOTALES</p><p id="final-stats" class="small-note"></p><button id="retry-button" class="primary-button" type="button">REINTENTAR <span>↻</span></button><button id="menu-button" class="text-button" type="button">Volver al inicio</button></div>
+            <div class="ranking"><div class="ranking-heading"><h3>TOP 5</h3><span id="ranking-mode" class="tag">CARGANDO</span></div><ol id="ranking-list"></ol><p id="ranking-note" class="small-note" aria-live="polite"></p></div>
+          </section>
+        </div>
+        <div class="arena-footer"><span id="objective">OBJETIVO: SOBREVIVE 3 OLEADAS SIN LLEGAR A 0 DE INTEGRIDAD.</span><span id="remaining">ANTIVIRUS v1.0</span></div>
+        <div id="zone-status" class="zone-status" role="status">▣ ZONA SEGURA · Entra con 60 puntos disponibles para comprar +50% de cadencia.</div>
+      </section>
+
+      <aside id="combat-info" class="combat-info" hidden><span class="eyebrow">ESTADO DEL ANTIVIRUS</span><span>Créditos disponibles <strong id="credits-text">0</strong></span><span>Cadencia <strong id="upgrade-text">ESTÁNDAR</strong></span><span>Eliminaciones <strong id="kills-text">0</strong></span><p>Los puntos totales cuentan para el ranking. Comprar consume créditos, no tu récord.</p></aside>
+    </main>
+
+    <section class="field-guide" aria-labelledby="guide-title">
+      <div class="guide-heading"><h2 id="guide-title">CONOCE LA AMENAZA</h2><span>INTELIGENCIA DE CAMPO <span class="orange">↘</span></span></div>
+      <div class="guide-grid">
+        <article><span class="enemy-icon virus"></span><div><h3>01 / VIRUS</h3><p>Persecución directa.<br>No dejes que se acerque.</p></div><span class="enemy-tag">EQUILIBRADO</span></article>
+        <article><span class="enemy-icon worm"></span><div><h3>02 / GUSANO</h3><p>Veloz e impredecible.<br>Poca resistencia.</p></div><span class="enemy-tag">RÁPIDO</span></article>
+        <article><span class="enemy-icon trojan"></span><div><h3>03 / TROYANO</h3><p>Avanza lento. Resiste más.<br>Mantén la distancia.</p></div><span class="enemy-tag">BLINDADO</span></article>
+        <article class="safe-guide"><span class="enemy-icon safe"></span><div><h3>04 / ZONA SEGURA</h3><p>Escudo durante 2 s al entrar.<br>60 créditos → +50% de cadencia.</p></div></article>
+      </div>
+    </section>
+    <footer class="page-footer"><span>CALL OF MALWARE <span class="muted">© 2026</span></span><span>CANVAS + WEB AUDIO <span class="orange">/</span> GENERACIÓN PROCEDURAL <span class="orange">/</span> SUPABASE</span><span class="footer-status"><i class="status-dot"></i> DEFENSA ACTIVA</span></footer>
+  </div>
+  <noscript>Activa JavaScript en el navegador para iniciar el juego.</noscript>
+</body>
+</html>
