@@ -26,7 +26,7 @@ function environment({ configured = false, storageFails = false, corrupt = false
   }
   const handlers = {};
   const context = vm.createContext({
-    console, Uint32Array, Math, Date, Object, Number, String, JSON, Array, Set,
+    console, Uint32Array, Int16Array, Math, Date, Object, Number, String, JSON, Array, Set,
     AbortController, setTimeout, clearTimeout, HTMLInputElement: class {},
     crypto: {getRandomValues(array){array[0]=12345;}},
     matchMedia:()=>({matches:false}), requestAnimationFrame(){}, scrollTo(){},
@@ -51,19 +51,20 @@ function environment({ configured = false, storageFails = false, corrupt = false
 module.exports = { environment };
 if (require.main === module) (async()=>{
   const e=environment(), run=e.run;
-  const plan=run('JSON.stringify(crearGenerador(42).oleada(1,1000,650))');
-  ok(plan===run('JSON.stringify(crearGenerador(42).oleada(1,1000,650))'),'misma semilla reproduce exactamente la oleada');
-  ok(plan!==run('JSON.stringify(crearGenerador(43).oleada(1,1000,650))'),'otra semilla cambia la partida');
+  const plan=run('JSON.stringify(crearGenerador(42).oleada(1,ENTRADAS))');
+  ok(plan===run('JSON.stringify(crearGenerador(42).oleada(1,ENTRADAS))'),'misma semilla reproduce exactamente la oleada');
+  ok(plan!==run('JSON.stringify(crearGenerador(43).oleada(1,ENTRADAS))'),'otra semilla cambia la partida');
   ok(run('nuevaSemilla() !== nuevaSemilla()'),'reinicios consecutivos reciben semillas distintas');
-  for(let wave=1;wave<=3;wave++) {
-    const data=JSON.parse(run(`JSON.stringify(crearGenerador(99).oleada(${wave},1000,650))`));
-    ok(data.length===[10,16,23][wave-1],`oleada ${wave}: cantidad progresiva`);
-    ok(data.every(p=>p.x<0||p.x>1000||p.y<0||p.y>650),`oleada ${wave}: apariciones en los bordes`);
+  const entradas=JSON.parse(run('JSON.stringify(ENTRADAS)'));
+  for(let wave=1;wave<=10;wave++) {
+    const data=JSON.parse(run(`JSON.stringify(crearGenerador(99).oleada(${wave},ENTRADAS))`));
+    ok(data.length===10+(wave-1)*4,`oleada ${wave}: cantidad progresiva`);
+    ok(data.every(p=>entradas.some(e=>Math.abs(p.x-e.x)<=22&&Math.abs(p.y-e.y)<=22)),`oleada ${wave}: apariciones en brechas del mapa`);
     ok(new Set(data.map(p=>p.tipo)).size===3,`oleada ${wave}: aparecen los tres tipos`);
     ok(data.every((p,i)=>i===0||p.apareceEn>data[i-1].apareceEn),`oleada ${wave}: intervalos positivos`);
-    ok(run(`crearGenerador(99).oleada(${wave},1000,650).every(e=>{
-      const b=TIPOS_MALWARE[e.tipo]; const v=e.velocidad/(b.velocidad*(1+(${wave}-1)*.14));
-      const h=e.vida/(b.vida*(1+(${wave}-1)*.20)); return v>=.88&&v<=1.12&&h>=.88&&h<=1.12;
+    ok(run(`crearGenerador(99).oleada(${wave},ENTRADAS).every(e=>{
+      const b=TIPOS_MALWARE[e.tipo]; const v=e.velocidad/(b.velocidad*Math.min(1.68,1+(${wave}-1)*.075));
+      const h=e.vida/(b.vida*(1+(${wave}-1)*.19)); return v>=.88&&v<=1.12&&h>=.88&&h<=1.12;
     })`),`oleada ${wave}: variación acotada a ±12%`);
   }
   run('iniciarPartida()');
@@ -72,40 +73,39 @@ if (require.main === module) (async()=>{
   ok(run('estado === "jugando"'),'transición inicia el combate');
   e.handlers.keydown({code:'KeyD',target:{},preventDefault(){}});
   run('actualizar(.1)'); e.handlers.keyup({code:'KeyD'});
-  ok(run('partida.jugador.x === 524.5'),'evento D mueve al antivirus');
-  run('partida.jugador.x=500;partida.jugador.y=325;teclas.add("KeyD");teclas.add("KeyS");actualizar(.1);limpiarEntrada()');
-  ok(run('Math.abs(Math.hypot(partida.jugador.x-500,partida.jugador.y-325)-24.5)<.001'),'diagonal tiene la misma velocidad');
+  ok(run('partida.jugador.x === 1224.5'),'evento D mueve al antivirus');
+  run('partida.jugador.x=1200;partida.jugador.y=800;teclas.add("KeyD");teclas.add("KeyS");actualizar(.1);limpiarEntrada()');
+  ok(run('Math.abs(Math.hypot(partida.jugador.x-1200,partida.jugador.y-800)-24.5)<.001'),'diagonal tiene la misma velocidad');
   run('pausar();const antes=partida.tiempo;actualizar(1)');
   ok(run('estado === "pausa" && partida.tiempo === antes'),'pausa congela la simulación');
-  run('continuar();partida.creditos=60;partida.puntos=60;partida.jugador.x=500;partida.jugador.y=530;actualizar(.01)');
+  run('continuar();partida.creditos=60;partida.puntos=60;partida.jugador.x=1200;partida.jugador.y=800;actualizar(.01)');
   ok(run('partida.dentroZona && partida.jugador.mejorado && partida.creditos===0 && partida.puntos===60'),'zona compra mejora sin restar récord');
   run('disparar()');
+  ok(run('partida.balas.length===0'),'la zona segura bloquea disparos para evitar abuso');
+  run('partida.jugador.x=1000;partida.jugador.y=800;actualizarZona();mouse.x=1100;mouse.y=800;disparar()');
   ok(run('Math.abs(partida.jugador.disparoEn-.23/1.5)<.00001'),'mejora aumenta la cadencia exactamente 50%');
   run('partida.creditos=60;actualizar(.1)');
   ok(run('partida.creditos===60'),'la mejora no se cobra dos veces');
-  run('partida.enemigos=[{...TIPOS_MALWARE.virus,tipo:"virus",x:500,y:530,vidaMax:36,velocidad:0,golpe:0}];actualizar(.1)');
-  ok(run('partida.jugador.vida===100'),'escudo protege al entrar');
-  run('partida.enemigos=[];actualizar(2.01);partida.enemigos=[{...TIPOS_MALWARE.virus,tipo:"virus",x:500,y:530,vidaMax:36,velocidad:0,golpe:0}];actualizar(.01)');
-  ok(run('partida.jugador.vida===84'),'el escudo expira y las colisiones dañan');
+  run('partida.jugador.x=1200;partida.jugador.y=800;actualizarZona();partida.enemigos=[{...TIPOS_MALWARE.virus,tipo:"virus",x:1200,y:800,vidaMax:36,velocidad:0,golpe:0}];actualizar(.1)');
+  ok(run('partida.jugador.vida===100'),'zona segura impide daño sin límite de tiempo');
+  run('partida.enemigos=[];partida.jugador.x=1000;partida.jugador.y=800;actualizarZona();partida.enemigos=[{...TIPOS_MALWARE.virus,tipo:"virus",x:1000,y:800,vidaMax:36,velocidad:0,golpe:0}];actualizar(.01)');
+  ok(run('partida.jugador.vida===84'),'fuera de la zona las colisiones dañan');
   run('actualizar(.1)');
   ok(run('partida.jugador.vida===84'),'invulnerabilidad evita daño cada fotograma');
-  run('iniciarPartida();actualizar(3.01);partida.plan=[{apareceEn:9999}];partida.enemigos=[{...TIPOS_MALWARE.gusano,tipo:"gusano",x:550,y:325,vida:18,vidaMax:18,velocidad:0,golpe:0}];mouse.x=550;mouse.y=325;disparar();actualizar(.05)');
+  run('iniciarPartida();actualizar(3.01);partida.jugador.x=1000;partida.jugador.y=800;actualizarZona();partida.plan=[{apareceEn:9999}];partida.enemigos=[{...TIPOS_MALWARE.gusano,tipo:"gusano",x:1050,y:800,vida:18,vidaMax:18,velocidad:0,golpe:0}];mouse.x=1050;mouse.y=800;disparar();actualizar(.05)');
   ok(run('partida.enemigos.length===0 && partida.puntos===15 && partida.bajas===1'),'bala mata, suma puntos y registra baja');
   ok(run('partida.particulas.length>0 && partida.textos.length>0'),'baja genera partículas y texto flotante');
   ok(run('distanciaSegmento(50,0,0,0,100,0)===0'),'colisión continua evita atravesar enemigos');
-  run('partida.plan=[];partida.siguiente=0;actualizar(.01)');
-  ok(run('estado==="transicion" && partida.oleada===2'),'limpiar oleada 1 avanza a la 2');
-  run('actualizar(3.01);partida.plan=[];partida.siguiente=0;actualizar(.01)');
-  ok(run('estado==="transicion" && partida.oleada===3'),'limpiar oleada 2 avanza a la 3');
-  run('actualizar(3.01);partida.plan=[];partida.siguiente=0;actualizar(.01)');
+  for(let wave=2;wave<=10;wave++){run('partida.enemigos=[];partida.plan=[];partida.siguiente=0;actualizar(.01)');ok(run(`estado==="transicion" && partida.oleada===${wave}`),`limpiar avanza a oleada ${wave}`);run('actualizar(3.01)');}
+  run('partida.enemigos=[];partida.plan=[];partida.siguiente=0;actualizar(.01)');
   await new Promise(r=>setTimeout(r,0));
-  ok(run('estado==="fin"')&&e.elements.get('end-title').textContent==='SISTEMA PROTEGIDO.','victoria al terminar tres oleadas');
+  ok(run('estado==="fin"')&&e.elements.get('end-title').textContent==='RED RECUPERADA.','victoria al terminar diez oleadas');
   ok(e.elements.get('ranking-list').children.length===1,'victoria guarda y muestra ranking');
   const seed=run('partida.semilla');
   e.elements.get('retry-button').handlers.click();
   ok(run('partida.puntos===0 && partida.jugador.vida===100 && partida.oleada===1 && !partida.jugador.mejorado && partida.enemigos.length===0'),'Reintentar restablece la partida completa sin navegación');
   ok(seed!==run('partida.semilla'),'Reintentar renueva la semilla');
-  run('actualizar(3.01);partida.jugador.vida=1;partida.enemigos=[{...TIPOS_MALWARE.troyano,tipo:"troyano",x:500,y:325,velocidad:0,vidaMax:88,golpe:0}];actualizar(.01)');
+  run('actualizar(3.01);partida.jugador.x=1000;partida.jugador.y=800;actualizarZona();partida.jugador.vida=1;partida.enemigos=[{...TIPOS_MALWARE.troyano,tipo:"troyano",x:1000,y:800,velocidad:0,vidaMax:88,golpe:0}];actualizar(.01)');
   await new Promise(r=>setTimeout(r,0));
   ok(run('estado==="fin" && partida.jugador.vida===0')&&e.elements.get('end-title').textContent==='SISTEMA COMPROMETIDO.','derrota por integridad cero');
   ok(run('leerRankingLocal().length===2'),'exactamente un registro por partida terminada');
