@@ -1,8 +1,8 @@
 # Call of Malware
 
-Videojuego de supervivencia para Nuevas Tecnologías, Ingeniería en Sistemas y Negocios Digitales. El jugador controla un antivirus y protege el sistema de tres oleadas de malware.
+Videojuego de supervivencia para Nuevas Tecnologías, Ingeniería en Sistemas y Negocios Digitales. El jugador controla un antivirus y protege una red de cuartos y pasillos durante diez oleadas de malware.
 
-- **Objetivo:** eliminar las amenazas de las tres oleadas sin llegar a cero de integridad.
+- **Objetivo:** eliminar las amenazas de las diez oleadas sin llegar a cero de integridad.
 - **Integrantes:** completar con los nombres del equipo. También se introducen en la pantalla inicial y se usan como nombre del ranking.
 - **Repositorio:** https://github.com/gabarimba/Proyecto-videojuego
 - **Jugar en GitHub Pages:** https://gabarimba.github.io/Proyecto-videojuego/ (publicado y verificado el 22 de septiembre de 2026).
@@ -24,7 +24,9 @@ La partida se pausa automáticamente al cambiar de ventana o pestaña. El audio 
 
 ## Reglas y balance
 
-El antivirus comienza con 100 de integridad y se mueve a 245 unidades por segundo. Cada bala causa 25 de daño. Las oleadas contienen **10, 16 y 23 enemigos**; además aumentan velocidad y resistencia y reducen los intervalos de aparición. Cada transición dura tres segundos. La oleada termina al eliminar al último enemigo, después de que hayan aparecido todos.
+El antivirus comienza con 100 de integridad y se mueve a 245 unidades por segundo. Cada bala causa 25 de daño. El mapa mide **2400 × 1600 unidades** y combina siete cuartos con pasillos. La cámara sigue al jugador y se adelanta ligeramente hacia el apuntado; el minimapa muestra la posición del antivirus, las amenazas, las entradas y la zona segura.
+
+Hay **10 oleadas**. Empiezan con 10 enemigos y suman cuatro por ronda hasta llegar a 46 en la décima, para un total de 280. También aumentan la velocidad y resistencia, mientras reducen el intervalo de aparición. Cada transición dura tres segundos y la oleada termina al eliminar al último enemigo, después de que hayan aparecido todos.
 
 | Amenaza | Forma / color | Comportamiento | Vida base | Velocidad base | Daño | Puntos |
 |---|---|---|---:|---:|---:|---:|
@@ -36,9 +38,9 @@ Al recibir daño, el antivirus parpadea y tiene 0.85 segundos de invulnerabilida
 
 ### Zona segura y compra
 
-El cuadrado amarillo siempre está en el mismo lugar. Entrar con **60 créditos** compra automáticamente una mejora única de **+50% de cadencia**: el intervalo pasa de 0.23 a 0.23 / 1.5 segundos. Los créditos se obtienen al eliminar enemigos; gastar créditos no resta los puntos totales del ranking.
+El cuadrado amarillo siempre está en el cuarto central. Entrar con **60 créditos** compra automáticamente una mejora única de **+50% de cadencia**: el intervalo pasa de 0.23 a 0.23 / 1.5 segundos. Los créditos se obtienen al eliminar enemigos; gastar créditos no resta los puntos totales del ranking.
 
-Entrar también proporciona un escudo de **2 segundos**, con recarga de **12 segundos** desde su activación. Para volver a activarlo hay que salir y entrar después de la recarga. Salir cancela el escudo. El HUD muestra si estás dentro, el estado del escudo y la compra. La protección temporal evita ganar quedándose indefinidamente en la zona.
+Mientras el jugador está dentro, el malware no puede entrar ni causar daño y la integridad se recupera a razón de **14 puntos por segundo**. El antivirus tampoco puede disparar desde allí, así que debe salir para completar la oleada. El HUD muestra la protección y el estado de la compra.
 
 ## Las dos tecnologías adicionales
 
@@ -58,15 +60,15 @@ Referencias oficiales: [API REST de Supabase](https://supabase.com/docs/guides/a
 
 ### 2. Generación procedural con semilla
 
-`nuevaSemilla()` usa `crypto.getRandomValues` y tiene una alternativa si esa API no existe. `mulberry32` produce una secuencia pseudoaleatoria reproducible. El generador prepara el plan de cada oleada: tipo, borde y posición de aparición, tiempo de aparición, fase del serpenteo y variación independiente de **±12% en vida y velocidad**. Los primeros tres enemigos garantizan los tres tipos; el resto se elige al azar.
+`nuevaSemilla()` usa `crypto.getRandomValues` y tiene una alternativa si esa API no existe. `mulberry32` produce una secuencia pseudoaleatoria reproducible. El generador prepara el plan de cada oleada: tipo, una de las ocho brechas en los bordes del mapa, posición, tiempo de aparición, fase del serpenteo y variación independiente de **±12% en vida y velocidad**. Los primeros tres enemigos garantizan los tres tipos; el resto se elige al azar.
 
-Cada partida muestra su semilla hexadecimal en el HUD y decimal en el resultado. Para reproducir una secuencia durante la explicación, crear `crearGenerador(12345)` y llamar a `oleada(1, 1000, 650)`, luego 2 y 3. Una semilla igual y las mismas llamadas producen los mismos planes. Las partículas usan otro generador para no cambiar la secuencia de enemigos.
+Cada partida muestra su semilla hexadecimal en el HUD y decimal en el resultado. Para reproducir una secuencia durante la explicación, crear `crearGenerador(12345)` y llamar a `oleada(1, entradas)`, continuando hasta la oleada deseada. Una semilla igual y las mismas llamadas producen los mismos planes. Las partículas usan otro generador para no cambiar la secuencia de enemigos.
 
 ## Arquitectura: resumen de archivos
 
 - `index.html`: estructura de inicio, integrantes, controles, Canvas, HUD, transiciones y resultados con Top 5.
 - `style.css`: identidad visual naranja/negra, tipografía local, diseño adaptable y estilos de cada pantalla.
-- `game.js`: bucle del juego, entrada, combate, oleadas, mejora, escudo, efectos visuales y Web Audio.
+- `game.js`: mapa, cámara, colisiones, rutas de enemigos, combate, diez oleadas, zona segura, efectos visuales y Web Audio.
 - `config.js`: configuración y SQL de Supabase, funciones asíncronas de ranking y recuperación local o en memoria.
 - `procedural.js`: semillas, algoritmo Mulberry32 y planes de aparición con variación de velocidad y vida.
 - `tests/verify.cjs`: verificaciones automáticas de reglas, reinicio, generación y errores del ranking; no se carga al jugar.
@@ -109,7 +111,7 @@ Los mismos archivos sirven en `file://` y en Pages porque se cargan mediante rut
 | Objetivo definido | Introducción y aviso permanente bajo la arena |
 | Indicadores de progreso | Integridad, puntos, oleada y créditos |
 | Enemigos o amenazas | Virus, gusanos y troyanos |
-| Tres etapas progresivas | Oleadas de 10, 16 y 23 enemigos con estadísticas crecientes |
+| Tres etapas progresivas | Diez oleadas de 10 a 46 enemigos con estadísticas crecientes |
 | Victoria y derrota | Dos resultados distintos y botón Reintentar |
 | Retroalimentación | Daño, partículas, puntos flotantes y tonos |
 | Interfaz funcional | HUD, pausa, sonido, instrucciones y avisos de zona |

@@ -35,24 +35,30 @@ function crearGenerador(semilla) {
   const azar = mulberry32(semilla);
   const entre = (min, max) => min + azar() * (max - min);
   return {
-    oleada(numero, ancho, alto) {
-      const cantidad = [10, 16, 23][numero - 1];
-      if (!cantidad) throw new Error("La oleada debe estar entre 1 y 3.");
+    oleada(numero, puntosAparicion) {
+      if (!Number.isInteger(numero) || numero < 1) throw new Error("La oleada debe ser un entero positivo.");
+      if (!Array.isArray(puntosAparicion) || puntosAparicion.length === 0) {
+        throw new Error("El mapa necesita puntos de aparición.");
+      }
+      // Hay diez rondas: cada una añade cuatro amenazas, hasta llegar a 46.
+      const cantidad = Math.min(10 + (numero - 1) * 4, 46);
       const tipos = Object.keys(TIPOS_MALWARE);
       let tiempo = 0;
       return Array.from({ length: cantidad }, (_, indice) => {
         // Rotamos los tipos para garantizar las tres amenazas en cada oleada.
         const tipo = tipos[indice < 3 ? indice : Math.floor(azar() * 3)];
         const base = TIPOS_MALWARE[tipo];
-        const borde = Math.floor(azar() * 4);
-        let x, y;
-        if (borde < 2) { x = borde === 0 ? -24 : ancho + 24; y = entre(25, alto - 25); }
-        else { x = entre(25, ancho - 25); y = borde === 2 ? -24 : alto + 24; }
-        // Las oleadas tienen más enemigos, menos espera y mayores estadísticas.
-        tiempo += entre(.85, 1.35) / (1 + (numero - 1) * .22);
+        const entrada = puntosAparicion[Math.floor(azar() * puntosAparicion.length)];
+        // Variar unos píxeles cada entrada hace que no aparezcan todos apilados.
+        const x = entrada.x + entre(-22, 22);
+        const y = entrada.y + entre(-22, 22);
+        // Cada ronda reduce la espera. Se limita para conservar claridad visual.
+        tiempo += entre(.72, 1.12) / Math.min(1.9, 1 + (numero - 1) * .10);
+        const factorVelocidad = Math.min(1.68, 1 + (numero - 1) * .075);
+        const factorVida = 1 + (numero - 1) * .19;
         return { tipo, x, y, apareceEn: tiempo,
-          velocidad: base.velocidad * (1 + (numero - 1) * .14) * entre(.88, 1.12),
-          vida: base.vida * (1 + (numero - 1) * .20) * entre(.88, 1.12),
+          velocidad: base.velocidad * factorVelocidad * entre(.88, 1.12),
+          vida: base.vida * factorVida * entre(.88, 1.12),
           fase: entre(0, Math.PI * 2) };
       });
     }

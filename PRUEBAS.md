@@ -4,25 +4,27 @@ Fecha: 22 de septiembre de 2026.
 
 ## Verificaciones automáticas
 
-Comando: `node tests/verify.cjs`. Resultado inicial: **54 verificaciones aprobadas**.
+Comando: `node tests/verify.cjs`. Resultado: **97 verificaciones aprobadas**.
 
 Se ejecuta el JavaScript real dentro de un contexto Node con DOM, almacenamiento y red simulados. No hay dependencias de pruebas ni código de pruebas cargado desde el juego.
 
-- Semillas repetibles y distintas entre reinicios; bordes válidos y tiempos ordenados.
-- Tres oleadas de 10, 16 y 23 enemigos, tres tipos garantizados y variación ±12%.
+- Semillas repetibles y distintas entre reinicios; ocho brechas válidas y tiempos ordenados.
+- Diez oleadas de 10 a 46 enemigos, tres tipos garantizados y variación ±12%.
 - Movimiento por eventos de teclado y normalización diagonal.
+- Colisión del jugador, enemigos y balas contra los cuartos y pasillos del mapa.
+- Cámara con seguimiento, coordenadas de apuntado y minimapa.
 - Pausa que congela la simulación.
 - Compra única por 60 créditos; puntos de récord intactos y cadencia ×1.5.
-- Escudo temporal, expiración, daño e invulnerabilidad posterior.
+- Protección permanente y recuperación de integridad dentro de la zona segura; disparo bloqueado dentro de ella.
 - Colisión continua de balas, bajas, puntos, partículas y textos.
-- Transiciones de las tres oleadas, victoria y derrota por vida cero.
+- Transiciones de las diez oleadas, victoria y derrota por vida cero.
 - Reinicio sin navegación, limpieza de estado y nueva semilla.
 - Un registro por partida, Top 5 ordenado y nombres insertados como texto.
 - `localStorage` bloqueado, JSON corrupto, error de red, HTTP 403 y respuesta inválida.
 - Contrato GET/POST remoto con respuestas simuladas y claves publishable.
 - Timeout real de cuatro segundos y recuperación local.
 
-Prueba adicional: `node tests/balance.cjs`. Un jugador automático recorre la arena y apunta al enemigo más cercano mediante los controles normales. Con las semillas 42, 12345 y 2026 eliminó los 49 enemigos, terminó la tercera oleada y conservó integridad positiva; tardó 47–48 segundos de combate. Esto comprueba que se puede ganar sin modificar las reglas; no reemplaza las pruebas de dificultad con personas.
+Prueba adicional: `node tests/balance.cjs`. Un jugador automático recorre el cuarto central, apunta al enemigo más cercano mediante los controles normales y se repliega a la zona segura cuando necesita recuperar integridad. Con las semillas 42, 12345 y 2026 eliminó los **280 enemigos**, terminó la décima oleada con 58, 74 y 74 de integridad y tardó entre 488 y 556 segundos. Esto comprueba que se puede ganar sin modificar las reglas; no reemplaza las pruebas de dificultad con personas.
 
 ## Revisión en navegador
 
@@ -39,7 +41,9 @@ GitHub Pages activado desde `main` y `/(root)`. URL pública: https://gabarimba.
 ## Decisiones y correcciones
 
 - Los puntos del ranking se separaron de los créditos para que comprar no penalice el récord.
-- La zona protege por dos segundos, con recarga, para evitar una victoria estacionaria.
+- La zona bloquea amenazas y daño, recupera integridad y desactiva el disparo para obligar al jugador a salir y combatir.
+- El mapa usa rectángulos conectados para que las colisiones y la búsqueda de rutas puedan explicarse con facilidad.
+- Los enemigos consultan un campo de distancias calculado desde el jugador para recorrer pasillos sin atravesar paredes.
 - Se garantizan los tres tipos al principio de cada oleada; una selección completamente aleatoria podía omitir un tipo.
 - Se usa colisión por segmento para evitar que las balas atraviesen enemigos entre fotogramas.
 - Se separa el azar visual del generador de oleadas para preservar la reproducción por semilla.
