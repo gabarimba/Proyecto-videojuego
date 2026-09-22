@@ -6,7 +6,7 @@ const canvas = $("game-canvas");
 const ctx = canvas.getContext("2d");
 const VISTA_ANCHO = 1000, VISTA_ALTO = 650;
 const MUNDO_ANCHO = 2400, MUNDO_ALTO = 1600;
-const MAX_OLEADAS = 10, COSTO_MEJORA = 60, TAM_CELDA = 40;
+const MAX_OLEADAS = 10, COSTO_MEJORA = 60, TAM_CELDA = 20;
 
 // Rectángulos de piso superpuestos forman habitaciones, puertas y pasillos.
 const PISOS = Object.freeze([
@@ -26,6 +26,7 @@ const ZONA = Object.freeze({x:1080,y:720,w:240,h:160});
 const ETIQUETAS_OLEADA = ["Primera infección","La red se abre","Defiende el núcleo","Tráfico anómalo","Brecha múltiple","Sistema saturado","Protocolo rojo","Cero confianza","Última muralla","Apocalipsis digital"];
 const teclas = new Set();
 const mouse = {pantallaX:700,pantallaY:325,x:1400,y:800,disparando:false};
+const mascarasFlujo = {};
 const movimientoReducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let partida = null, estado = "inicio", estadoAntesDePausa = "jugando", numeroPartida = 0, ultimoTiempo = 0;
 
@@ -37,17 +38,25 @@ function efectoSonoro(tipo){if(tipo==="disparo")tono(620,.07,.025,"square",0,190
 function limpiarEntrada(){teclas.clear();mouse.disparando=false;}
 function dentroRect(x,y,r,m=0){return x>=r.x+m&&x<=r.x+r.w-m&&y>=r.y+m&&y<=r.y+r.h-m;}
 function tocaRect(x,y,radio,r){const cx=Math.max(r.x,Math.min(x,r.x+r.w)),cy=Math.max(r.y,Math.min(y,r.y+r.h));return Math.hypot(x-cx,y-cy)<radio;}
-function esPiso(x,y,radio=0){return PISOS.some(r=>dentroRect(x,y,r,radio));}
+function puntoEnPiso(x,y){return PISOS.some(r=>dentroRect(x,y,r));}
+function esPiso(x,y,radio=0){
+  if(!puntoEnPiso(x,y))return false;
+  // Se comprueba el círculo contra la unión de todos los pisos. Antes se
+  // exigía que cupiera en un solo rectángulo y el troyano se atoraba justo
+  // donde dos rectángulos forman una puerta.
+  for(let i=0;i<8&&radio;i++){const a=i*Math.PI/4;if(!puntoEnPiso(x+Math.cos(a)*radio,y+Math.sin(a)*radio))return false;}
+  return true;
+}
 function puedeOcupar(x,y,radio,enemigo=false){return esPiso(x,y,radio)&&!(enemigo&&tocaRect(x,y,radio+3,ZONA));}
-function moverEntidad(e,dx,dy,enemigo=false){if(puedeOcupar(e.x+dx,e.y,e.radio,enemigo))e.x+=dx;if(puedeOcupar(e.x,e.y+dy,e.radio,enemigo))e.y+=dy;}
-function lineaTransitable(ax,ay,bx,by,evitaZona=false){const pasos=Math.ceil(Math.hypot(bx-ax,by-ay)/22);for(let i=0;i<=pasos;i++){const t=pasos?i/pasos:0,x=ax+(bx-ax)*t,y=ay+(by-ay)*t;if(!esPiso(x,y,2)||(evitaZona&&tocaRect(x,y,5,ZONA)))return false;}return true;}
+function moverEntidad(e,dx,dy,enemigo=false){const ax=e.x,ay=e.y;if(puedeOcupar(e.x+dx,e.y,e.radio,enemigo))e.x+=dx;if(puedeOcupar(e.x,e.y+dy,e.radio,enemigo))e.y+=dy;return Math.hypot(e.x-ax,e.y-ay);}
+function lineaTransitable(ax,ay,bx,by,evitaZona=false,radio=2){const pasos=Math.ceil(Math.hypot(bx-ax,by-ay)/12);for(let i=0;i<=pasos;i++){const t=pasos?i/pasos:0,x=ax+(bx-ax)*t,y=ay+(by-ay)*t;if(!esPiso(x,y,radio)||(evitaZona&&tocaRect(x,y,radio+3,ZONA)))return false;}return true;}
 
 function iniciarPartida(){
   const nombre=$("team-name").value.trim();if(!nombre){$("team-name").focus();return;}activarAudio();numeroPartida++;
   const semilla=nuevaSemilla();
   partida={nombre,semilla,generador:crearGenerador(semilla),azarVisual:mulberry32(semilla^0xABCDEF),
     jugador:{x:1200,y:800,radio:15,vida:100,vidaMax:100,velocidad:245,invulnerable:0,disparoEn:0,mejorado:false,recuperacion:0},
-    camara:{x:700,y:475},flujo:null,flujoEn:0,enemigos:[],balas:[],particulas:[],textos:[],plan:[],
+    camara:{x:700,y:475},flujos:null,flujoEn:0,enemigos:[],balas:[],particulas:[],textos:[],plan:[],
     oleada:0,puntos:0,creditos:0,bajas:0,tiempo:0,tiempoOleada:0,siguiente:0,transicion:0,dentroZona:true};
   limpiarEntrada();$("lobby").hidden=true;$("workspace").classList.add("playing");document.body.classList.add("combat-active");
   $("combat-info").hidden=false;$("preview-tag").hidden=true;$("end-screen").hidden=true;$("pause-screen").hidden=true;
@@ -57,7 +66,7 @@ function iniciarPartida(){
 }
 function prepararOleada(){
   partida.oleada++;partida.plan=partida.generador.oleada(partida.oleada,ENTRADAS);partida.siguiente=0;partida.tiempoOleada=0;
-  partida.transicion=3;partida.balas=[];partida.flujo=null;partida.flujoEn=0;mouse.disparando=false;estado="transicion";
+  partida.transicion=3;partida.balas=[];partida.flujos=null;partida.flujoEn=0;mouse.disparando=false;estado="transicion";
   $("transition").hidden=false;$("transition-kicker").textContent=partida.oleada===1?"DESPLEGANDO ANTIVIRUS":"SECTOR LIMPIO / NUEVA BRECHA";
   $("transition-title").textContent=`OLEADA ${String(partida.oleada).padStart(2,"0")}`;
   $("transition-copy").textContent=`${partida.plan.length} amenazas · ${ETIQUETAS_OLEADA[partida.oleada-1]}`;$("transition-count").textContent="3";actualizarHUD();
@@ -71,17 +80,26 @@ function distanciaSegmento(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy
 function actualizarZona(dt=0){const j=partida.jugador,dentro=dentroRect(j.x,j.y,ZONA,j.radio/2);if(dentro&&partida.creditos>=COSTO_MEJORA&&!j.mejorado){partida.creditos-=COSTO_MEJORA;j.mejorado=true;emitirTexto("+50% CADENCIA",j.x,j.y-45,"#e8ca55");efectoSonoro("mejora");}if(dentro&&j.vida<j.vidaMax){j.recuperacion+=14*dt;const puntos=Math.floor(j.recuperacion);if(puntos){j.vida=Math.min(j.vidaMax,j.vida+puntos);j.recuperacion-=puntos;}}else j.recuperacion=0;partida.dentroZona=dentro;}
 
 function celdaDe(x,y){return{c:Math.max(0,Math.min(MUNDO_ANCHO/TAM_CELDA-1,Math.floor(x/TAM_CELDA))),f:Math.max(0,Math.min(MUNDO_ALTO/TAM_CELDA-1,Math.floor(y/TAM_CELDA)))}};
-function construirFlujo(){
+function obtenerMascaraFlujo(radio){
+  if(mascarasFlujo[radio])return mascarasFlujo[radio];
+  const columnas=MUNDO_ANCHO/TAM_CELDA,filas=MUNDO_ALTO/TAM_CELDA,m=new Uint8Array(columnas*filas);
+  // El mapa y el refugio son fijos; esta máscara se calcula una sola vez.
+  for(let f=0;f<filas;f++)for(let c=0;c<columnas;c++)m[f*columnas+c]=Number(puedeOcupar(c*TAM_CELDA+TAM_CELDA/2,f*TAM_CELDA+TAM_CELDA/2,radio,true));
+  return mascarasFlujo[radio]=m;
+}
+function construirFlujo(radio){
   const columnas=MUNDO_ANCHO/TAM_CELDA,filas=MUNDO_ALTO/TAM_CELDA,d=new Int16Array(columnas*filas);d.fill(-1);
+  const mascara=obtenerMascaraFlujo(radio);
   let ox=partida.jugador.x,oy=partida.jugador.y;if(partida.dentroZona){ox=ZONA.x-30;oy=partida.jugador.y;}const meta=celdaDe(ox,oy);
   const qc=new Int16Array(columnas*filas),qf=new Int16Array(columnas*filas);let ini=0,fin=0;
-  const agregar=(c,f,v)=>{if(c<0||f<0||c>=columnas||f>=filas)return;const i=f*columnas+c,x=c*TAM_CELDA+TAM_CELDA/2,y=f*TAM_CELDA+TAM_CELDA/2;if(d[i]!==-1||!puedeOcupar(x,y,17,true))return;d[i]=v;qc[fin]=c;qf[fin++]=f;};
-  agregar(meta.c,meta.f,0);while(ini<fin){const c=qc[ini],f=qf[ini++],v=d[f*columnas+c]+1;agregar(c+1,f,v);agregar(c-1,f,v);agregar(c,f+1,v);agregar(c,f-1,v);}partida.flujo={distancias:d,columnas,filas};
+  const agregar=(c,f,v)=>{if(c<0||f<0||c>=columnas||f>=filas)return;const i=f*columnas+c;if(d[i]!==-1||!mascara[i])return;d[i]=v;qc[fin]=c;qf[fin++]=f;};
+  agregar(meta.c,meta.f,0);while(ini<fin){const c=qc[ini],f=qf[ini++],v=d[f*columnas+c]+1;agregar(c+1,f,v);agregar(c-1,f,v);agregar(c,f+1,v);agregar(c,f-1,v);}return{distancias:d,columnas,filas};
 }
+function construirFlujos(){partida.flujos={12:construirFlujo(12),15:construirFlujo(15),21:construirFlujo(21)};}
 function direccionFlujo(e){
-  const j=partida.jugador;if(!partida.dentroZona&&lineaTransitable(e.x,e.y,j.x,j.y,true))return Math.atan2(j.y-e.y,j.x-e.x);
-  if(!partida.flujo)return Math.atan2(j.y-e.y,j.x-e.x);const a=celdaDe(e.x,e.y);let mejor=partida.flujo.distancias[a.f*partida.flujo.columnas+a.c],destino=null;
-  for(const [dc,df] of [[1,0],[-1,0],[0,1],[0,-1]]){const c=a.c+dc,f=a.f+df;if(c<0||f<0||c>=partida.flujo.columnas||f>=partida.flujo.filas)continue;const v=partida.flujo.distancias[f*partida.flujo.columnas+c];if(v>=0&&(mejor<0||v<mejor)){mejor=v;destino={c,f};}}
+  const j=partida.jugador;if(!partida.dentroZona&&lineaTransitable(e.x,e.y,j.x,j.y,true,e.radio))return Math.atan2(j.y-e.y,j.x-e.x);
+  const flujo=partida.flujos&&partida.flujos[e.radio];if(!flujo)return Math.atan2(j.y-e.y,j.x-e.x);const a=celdaDe(e.x,e.y);let mejor=flujo.distancias[a.f*flujo.columnas+a.c],destino=null;
+  for(const [dc,df] of [[1,0],[-1,0],[0,1],[0,-1]]){const c=a.c+dc,f=a.f+df;if(c<0||f<0||c>=flujo.columnas||f>=flujo.filas)continue;const v=flujo.distancias[f*flujo.columnas+c];if(v>=0&&(mejor<0||v<mejor)){mejor=v;destino={c,f};}}
   return destino?Math.atan2(destino.f*TAM_CELDA+TAM_CELDA/2-e.y,destino.c*TAM_CELDA+TAM_CELDA/2-e.x):Math.atan2(j.y-e.y,j.x-e.x);
 }
 function actualizarCamara(dt){if(!partida)return;const j=partida.jugador,c=partida.camara,mx=(mouse.pantallaX-VISTA_ANCHO/2)*.18,my=(mouse.pantallaY-VISTA_ALTO/2)*.18,tx=Math.max(0,Math.min(MUNDO_ANCHO-VISTA_ANCHO,j.x-VISTA_ANCHO/2+mx)),ty=Math.max(0,Math.min(MUNDO_ALTO-VISTA_ALTO,j.y-VISTA_ALTO/2+my)),s=movimientoReducido?1:1-Math.exp(-dt*8);c.x+=(tx-c.x)*s;c.y+=(ty-c.y)*s;mouse.x=c.x+mouse.pantallaX;mouse.y=c.y+mouse.pantallaY;}
@@ -92,8 +110,8 @@ function actualizar(dt){
   if(estado!=="jugando")return;const j=partida.jugador;partida.tiempo+=dt;partida.tiempoOleada+=dt;j.invulnerable=Math.max(0,j.invulnerable-dt);j.disparoEn=Math.max(0,j.disparoEn-dt);
   let dx=Number(teclas.has("KeyD"))-Number(teclas.has("KeyA")),dy=Number(teclas.has("KeyS"))-Number(teclas.has("KeyW"));const l=Math.hypot(dx,dy)||1;moverEntidad(j,dx/l*j.velocidad*dt,dy/l*j.velocidad*dt);actualizarZona(dt);actualizarCamara(dt);if(mouse.disparando&&j.disparoEn===0&&!partida.dentroZona)disparar();
   while(partida.siguiente<partida.plan.length&&partida.plan[partida.siguiente].apareceEn<=partida.tiempoOleada){const datos=partida.plan[partida.siguiente++];partida.enemigos.push({...TIPOS_MALWARE[datos.tipo],...datos,vidaMax:datos.vida,golpe:0});}
-  partida.flujoEn-=dt;if(partida.flujoEn<=0){construirFlujo();partida.flujoEn=.3;}
-  for(const e of partida.enemigos){const base=direccionFlujo(e),serp=e.tipo==="gusano"?Math.sin(partida.tiempo*6+e.fase)*.22:0;e.angulo=base+serp;moverEntidad(e,Math.cos(e.angulo)*e.velocidad*dt,Math.sin(e.angulo)*e.velocidad*dt,true);e.golpe=Math.max(0,e.golpe-dt);}
+  partida.flujoEn-=dt;if(partida.flujoEn<=0){construirFlujos();partida.flujoEn=.3;}
+  for(const e of partida.enemigos){const base=direccionFlujo(e),serp=e.tipo==="gusano"?Math.sin(partida.tiempo*6+e.fase)*.22:0;e.angulo=base+serp;const paso=e.velocidad*dt,avance=moverEntidad(e,Math.cos(e.angulo)*paso,Math.sin(e.angulo)*paso,true);e.atascado=avance<paso*.12?(e.atascado||0)+dt:0;if(e.atascado>.35){const lado=e.fase>Math.PI?1:-1;moverEntidad(e,Math.cos(base+lado*Math.PI/2)*paso,Math.sin(base+lado*Math.PI/2)*paso,true);}e.golpe=Math.max(0,e.golpe-dt);}
   for(const b of partida.balas){const ax=b.x,ay=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.vida-=dt;if(!lineaTransitable(ax,ay,b.x,b.y)){b.vida=0;continue;}for(const e of partida.enemigos){if(e.vida<=0||distanciaSegmento(e.x,e.y,ax,ay,b.x,b.y)>e.radio+3)continue;e.vida-=25;e.golpe=.1;b.vida=0;if(e.vida<=0){partida.puntos+=e.puntos;partida.creditos+=e.puntos;partida.bajas++;explotar(e);emitirTexto(`+${e.puntos}`,e.x,e.y-15,"#d2edb9");efectoSonoro("baja");}break;}}
   partida.balas=partida.balas.filter(b=>b.vida>0);partida.enemigos=partida.enemigos.filter(e=>e.vida>0);
   for(const e of partida.enemigos){if(!partida.dentroZona&&Math.hypot(e.x-j.x,e.y-j.y)<e.radio+j.radio&&j.invulnerable===0){j.vida=Math.max(0,j.vida-(e.tipo==="troyano"?24:e.tipo==="gusano"?12:16));j.invulnerable=.85;emitirTexto("INTEGRIDAD −",j.x,j.y-26,"#f17469");efectoSonoro("daño");if(j.vida===0){finalizar(false);return;}}}

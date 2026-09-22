@@ -26,9 +26,10 @@ function nuevaSemilla() {
 }
 
 const TIPOS_MALWARE = Object.freeze({
-  virus: { velocidad: 76, vida: 36, radio: 15, puntos: 10, color: "#f17469" },
-  gusano: { velocidad: 128, vida: 18, radio: 12, puntos: 15, color: "#ff943d" },
-  troyano: { velocidad: 48, vida: 88, radio: 21, puntos: 25, color: "#c397eb" }
+  // El aumento es moderado: entre 6% y 8% frente al balance anterior.
+  virus: { velocidad: 82, vida: 36, radio: 15, puntos: 10, color: "#f17469" },
+  gusano: { velocidad: 136, vida: 18, radio: 12, puntos: 15, color: "#ff943d" },
+  troyano: { velocidad: 52, vida: 88, radio: 21, puntos: 25, color: "#c397eb" }
 });
 
 function crearGenerador(semilla) {

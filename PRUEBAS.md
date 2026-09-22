@@ -4,7 +4,7 @@ Fecha: 22 de septiembre de 2026.
 
 ## Verificaciones automáticas
 
-Comando: `node tests/verify.cjs`. Resultado: **97 verificaciones aprobadas**.
+Comando: `node tests/verify.cjs`. Resultado: **98 verificaciones aprobadas**.
 
 Se ejecuta el JavaScript real dentro de un contexto Node con DOM, almacenamiento y red simulados. No hay dependencias de pruebas ni código de pruebas cargado desde el juego.
 
@@ -12,6 +12,7 @@ Se ejecuta el JavaScript real dentro de un contexto Node con DOM, almacenamiento
 - Diez oleadas de 10 a 46 enemigos, tres tipos garantizados y variación ±12%.
 - Movimiento por eventos de teclado y normalización diagonal.
 - Colisión del jugador, enemigos y balas contra los cuartos y pasillos del mapa.
+- Recorrido de troyanos grandes desde las ocho entradas hasta el núcleo sin atascarse.
 - Cámara con seguimiento, coordenadas de apuntado y minimapa.
 - Pausa que congela la simulación.
 - Compra única por 60 créditos; puntos de récord intactos y cadencia ×1.5.
@@ -24,7 +25,7 @@ Se ejecuta el JavaScript real dentro de un contexto Node con DOM, almacenamiento
 - Contrato GET/POST remoto con respuestas simuladas y claves publishable.
 - Timeout real de cuatro segundos y recuperación local.
 
-Prueba adicional: `node tests/balance.cjs`. Un jugador automático recorre el cuarto central, apunta al enemigo más cercano mediante los controles normales y se repliega a la zona segura cuando necesita recuperar integridad. Con las semillas 42, 12345 y 2026 eliminó los **280 enemigos**, terminó la décima oleada con 58, 74 y 74 de integridad y tardó entre 488 y 556 segundos. Esto comprueba que se puede ganar sin modificar las reglas; no reemplaza las pruebas de dificultad con personas.
+Prueba adicional: `node tests/balance.cjs`. Un jugador automático recorre el cuarto central, apunta al enemigo más cercano mediante los controles normales y se repliega a la zona segura cuando necesita recuperar integridad. Con las semillas 42, 12345 y 2026 eliminó los **280 enemigos**, terminó la décima oleada con 74, 74 y 98 de integridad y tardó entre 409 y 419 segundos. Esto comprueba que se puede ganar con la velocidad nueva sin modificar las reglas; no reemplaza las pruebas de dificultad con personas.
 
 ## Revisión en navegador
 
