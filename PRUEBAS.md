@@ -30,7 +30,11 @@ Revisión realizada en el navegador integrado usando HTTP local: carga inicial, 
 
 El navegador de pruebas bloqueó la navegación `file://` por su política de seguridad. Por ello, la apertura directa está preparada mediante rutas relativas y scripts clásicos, pero debe comprobarse manualmente abriendo `index.html`. No se intentó eludir ese bloqueo.
 
-Las pruebas de Supabase usan respuestas simuladas: no se ha probado una cuenta real porque la configuración se entrega vacía. La publicación se verifica por separado cuando esté disponible GitHub Pages.
+Las pruebas de Supabase usan respuestas simuladas: no se ha probado una cuenta real porque la configuración se entrega vacía.
+
+## Publicación verificada
+
+GitHub Pages activado desde `main` y `/(root)`. URL pública: https://gabarimba.github.io/Proyecto-videojuego/. El 22 de septiembre de 2026 se comprobó que carga la pantalla inicial y que el formulario inicia una partida con HUD, semilla y transición, sin errores de JavaScript. Los cinco archivos del juego son los mismos de la versión local.
 
 ## Decisiones y correcciones
 

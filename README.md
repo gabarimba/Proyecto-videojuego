@@ -5,7 +5,7 @@ Videojuego de supervivencia para Nuevas Tecnologías, Ingeniería en Sistemas y 
 - **Objetivo:** eliminar las amenazas de las tres oleadas sin llegar a cero de integridad.
 - **Integrantes:** completar con los nombres del equipo. También se introducen en la pantalla inicial y se usan como nombre del ranking.
 - **Repositorio:** https://github.com/gabarimba/Proyecto-videojuego
-- **Dirección prevista de GitHub Pages:** https://gabarimba.github.io/Proyecto-videojuego/ (pendiente de activación y verificación).
+- **Jugar en GitHub Pages:** https://gabarimba.github.io/Proyecto-videojuego/ (publicado y verificado el 22 de septiembre de 2026).
 - **Estado de Supabase:** integración implementada; las constantes están vacías por diseño. Configurar el proyecto para demostrar el ranking en línea.
 
 ## Cómo jugar
@@ -113,10 +113,10 @@ Los mismos archivos sirven en `file://` y en Pages porque se cargan mediante rut
 | Victoria y derrota | Dos resultados distintos y botón Reintentar |
 | Retroalimentación | Daño, partículas, puntos flotantes y tonos |
 | Interfaz funcional | HUD, pausa, sonido, instrucciones y avisos de zona |
-| Versión publicada | Requiere verificar el enlace de Pages después del despliegue |
+| Versión publicada | GitHub Pages activo; inicio y partida verificados desde el enlace público |
 | Sección 4: dos tecnologías | Supabase configurado y generación procedural ejecutada en cada partida |
 
-**Para la entrega:** completar los nombres del equipo, activar y verificar Supabase, confirmar el enlace público y preparar el video y la presentación que pide el documento. El funcionamiento local por sí solo no acredita la publicación ni el servicio en línea.
+**Para la entrega:** completar los nombres del equipo, activar y verificar Supabase y preparar el video y la presentación que pide el documento. El enlace público ya está activo. El modo local del ranking no acredita por sí solo la integración de un servicio en línea.
 
 ## Pruebas y explicación del equipo
 
