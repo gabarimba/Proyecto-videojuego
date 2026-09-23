@@ -4,7 +4,7 @@ Fecha: 22 de septiembre de 2026.
 
 ## Verificaciones automáticas
 
-Comando: `node tests/verify.cjs`. Resultado: **98 verificaciones aprobadas**.
+Comando: `node tests/verify.cjs`. Resultado: **100 verificaciones aprobadas**.
 
 Se ejecuta el JavaScript real dentro de un contexto Node con DOM, almacenamiento y red simulados. No hay dependencias de pruebas ni código de pruebas cargado desde el juego.
 
@@ -13,6 +13,7 @@ Se ejecuta el JavaScript real dentro de un contexto Node con DOM, almacenamiento
 - Movimiento por eventos de teclado y normalización diagonal.
 - Colisión del jugador, enemigos y balas contra los cuartos y pasillos del mapa.
 - Recorrido de troyanos grandes desde las ocho entradas hasta el núcleo sin atascarse.
+- Persecución hasta una esquina cuando el jugador se pega a la pared: la ruta permanece activa y los ocho troyanos llegan.
 - Cámara con seguimiento, coordenadas de apuntado y minimapa.
 - Pausa que congela la simulación.
 - Compra única por 60 créditos; puntos de récord intactos y cadencia ×1.5.
@@ -25,7 +26,7 @@ Se ejecuta el JavaScript real dentro de un contexto Node con DOM, almacenamiento
 - Contrato GET/POST remoto con respuestas simuladas y claves publishable.
 - Timeout real de cuatro segundos y recuperación local.
 
-Prueba adicional: `node tests/balance.cjs`. Un jugador automático recorre el cuarto central, apunta al enemigo más cercano mediante los controles normales y se repliega a la zona segura cuando necesita recuperar integridad. Con las semillas 42, 12345 y 2026 eliminó los **280 enemigos**, terminó la décima oleada con 74, 74 y 98 de integridad y tardó entre 409 y 419 segundos. Esto comprueba que se puede ganar con la velocidad nueva sin modificar las reglas; no reemplaza las pruebas de dificultad con personas.
+Prueba adicional: `node tests/balance.cjs`. Un jugador automático recorre el cuarto central, apunta al enemigo más cercano mediante los controles normales y se repliega a la zona segura cuando necesita recuperar integridad. Con las semillas 42, 12345 y 2026 eliminó los **280 enemigos**, terminó la décima oleada con 50, 50 y 82 de integridad y tardó entre 413 y 424 segundos. Esto comprueba que se puede ganar con la navegación corregida sin modificar las reglas; no reemplaza las pruebas de dificultad con personas.
 
 ## Revisión en navegador
 
@@ -45,6 +46,7 @@ GitHub Pages activado desde `main` y `/(root)`. URL pública: https://gabarimba.
 - La zona bloquea amenazas y daño, recupera integridad y desactiva el disparo para obligar al jugador a salir y combatir.
 - El mapa usa rectángulos conectados para que las colisiones y la búsqueda de rutas puedan explicarse con facilidad.
 - Los enemigos consultan un campo de distancias calculado desde el jugador para recorrer pasillos sin atravesar paredes.
+- Si el jugador ocupa una celda estrecha para un enemigo grande, la ruta usa la celda transitable más cercana; el troyano mantiene separado su radio de movimiento del radio de daño y disparos.
 - Se garantizan los tres tipos al principio de cada oleada; una selección completamente aleatoria podía omitir un tipo.
 - Se usa colisión por segmento para evitar que las balas atraviesen enemigos entre fotogramas.
 - Se separa el azar visual del generador de oleadas para preservar la reproducción por semilla.

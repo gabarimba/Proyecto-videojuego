@@ -26,7 +26,7 @@ La partida se pausa automáticamente al cambiar de ventana o pestaña. El audio 
 
 El antivirus comienza con 100 de integridad y se mueve a 245 unidades por segundo. Cada bala causa 25 de daño. El mapa mide **2400 × 1600 unidades** y combina siete cuartos con pasillos. La cámara sigue al jugador y se adelanta ligeramente hacia el apuntado; el minimapa muestra la posición del antivirus, las amenazas, las entradas y la zona segura.
 
-Hay **10 oleadas**. Empiezan con 10 enemigos y suman cuatro por ronda hasta llegar a 46 en la décima, para un total de 280. También aumentan la velocidad y resistencia, mientras reducen el intervalo de aparición. Cada tipo calcula una ruta con el espacio que ocupa, de modo que hasta el troyano grande pueda girar por las puertas. Cada transición dura tres segundos y la oleada termina al eliminar al último enemigo, después de que hayan aparecido todos.
+Hay **10 oleadas**. Empiezan con 10 enemigos y suman cuatro por ronda hasta llegar a 46 en la décima, para un total de 280. También aumentan la velocidad y resistencia, mientras reducen el intervalo de aparición. Cada tipo calcula una ruta con el espacio que ocupa. El troyano conserva una zona grande para recibir disparos, pero usa un radio de movimiento de 18 unidades para pasar por las puertas. Si el jugador se pega a una pared, su ruta termina en el punto transitable más cercano. Cada transición dura tres segundos y la oleada termina al eliminar al último enemigo, después de que hayan aparecido todos.
 
 | Amenaza | Forma / color | Comportamiento | Vida base | Velocidad base | Daño | Puntos |
 |---|---|---|---:|---:|---:|---:|

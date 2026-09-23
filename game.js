@@ -47,8 +47,9 @@ function esPiso(x,y,radio=0){
   for(let i=0;i<8&&radio;i++){const a=i*Math.PI/4;if(!puntoEnPiso(x+Math.cos(a)*radio,y+Math.sin(a)*radio))return false;}
   return true;
 }
+function radioParaMover(e){return e.radioMovimiento??e.radio;}
 function puedeOcupar(x,y,radio,enemigo=false){return esPiso(x,y,radio)&&!(enemigo&&tocaRect(x,y,radio+3,ZONA));}
-function moverEntidad(e,dx,dy,enemigo=false){const ax=e.x,ay=e.y;if(puedeOcupar(e.x+dx,e.y,e.radio,enemigo))e.x+=dx;if(puedeOcupar(e.x,e.y+dy,e.radio,enemigo))e.y+=dy;return Math.hypot(e.x-ax,e.y-ay);}
+function moverEntidad(e,dx,dy,enemigo=false){const ax=e.x,ay=e.y,radio=radioParaMover(e);if(puedeOcupar(e.x+dx,e.y,radio,enemigo))e.x+=dx;if(puedeOcupar(e.x,e.y+dy,radio,enemigo))e.y+=dy;return Math.hypot(e.x-ax,e.y-ay);}
 function lineaTransitable(ax,ay,bx,by,evitaZona=false,radio=2){const pasos=Math.ceil(Math.hypot(bx-ax,by-ay)/12);for(let i=0;i<=pasos;i++){const t=pasos?i/pasos:0,x=ax+(bx-ax)*t,y=ay+(by-ay)*t;if(!esPiso(x,y,radio)||(evitaZona&&tocaRect(x,y,radio+3,ZONA)))return false;}return true;}
 
 function iniciarPartida(){
@@ -93,12 +94,20 @@ function construirFlujo(radio){
   let ox=partida.jugador.x,oy=partida.jugador.y;if(partida.dentroZona){ox=ZONA.x-30;oy=partida.jugador.y;}const meta=celdaDe(ox,oy);
   const qc=new Int16Array(columnas*filas),qf=new Int16Array(columnas*filas);let ini=0,fin=0;
   const agregar=(c,f,v)=>{if(c<0||f<0||c>=columnas||f>=filas)return;const i=f*columnas+c;if(d[i]!==-1||!mascara[i])return;d[i]=v;qc[fin]=c;qf[fin++]=f;};
-  agregar(meta.c,meta.f,0);while(ini<fin){const c=qc[ini],f=qf[ini++],v=d[f*columnas+c]+1;agregar(c+1,f,v);agregar(c-1,f,v);agregar(c,f+1,v);agregar(c,f-1,v);}return{distancias:d,columnas,filas};
+  if(mascara[meta.f*columnas+meta.c])agregar(meta.c,meta.f,0);
+  else{
+    // El jugador puede pegarse a una pared más que un troyano. Si su celda
+    // no admite al enemigo, empezamos la ruta en el piso válido más cercano.
+    let elegido=-1,distancia=Infinity;
+    for(let i=0;i<mascara.length;i++){if(!mascara[i])continue;const x=(i%columnas+.5)*TAM_CELDA,y=(Math.floor(i/columnas)+.5)*TAM_CELDA,valor=(x-ox)**2+(y-oy)**2;if(valor<distancia){distancia=valor;elegido=i;}}
+    if(elegido>=0)agregar(elegido%columnas,Math.floor(elegido/columnas),0);
+  }
+  while(ini<fin){const c=qc[ini],f=qf[ini++],v=d[f*columnas+c]+1;agregar(c+1,f,v);agregar(c-1,f,v);agregar(c,f+1,v);agregar(c,f-1,v);}return{distancias:d,columnas,filas};
 }
-function construirFlujos(){partida.flujos={12:construirFlujo(12),15:construirFlujo(15),21:construirFlujo(21)};}
+function construirFlujos(){partida.flujos={};for(const tipo of Object.values(TIPOS_MALWARE)){const radio=radioParaMover(tipo);partida.flujos[radio]=construirFlujo(radio);}}
 function direccionFlujo(e){
-  const j=partida.jugador;if(!partida.dentroZona&&lineaTransitable(e.x,e.y,j.x,j.y,true,e.radio))return Math.atan2(j.y-e.y,j.x-e.x);
-  const flujo=partida.flujos&&partida.flujos[e.radio];if(!flujo)return Math.atan2(j.y-e.y,j.x-e.x);const a=celdaDe(e.x,e.y);let mejor=flujo.distancias[a.f*flujo.columnas+a.c],destino=null;
+  const j=partida.jugador,radio=radioParaMover(e);if(!partida.dentroZona&&lineaTransitable(e.x,e.y,j.x,j.y,true,radio))return Math.atan2(j.y-e.y,j.x-e.x);
+  const flujo=partida.flujos&&partida.flujos[radio];if(!flujo)return Math.atan2(j.y-e.y,j.x-e.x);const a=celdaDe(e.x,e.y);let mejor=flujo.distancias[a.f*flujo.columnas+a.c],destino=null;
   for(const [dc,df] of [[1,0],[-1,0],[0,1],[0,-1]]){const c=a.c+dc,f=a.f+df;if(c<0||f<0||c>=flujo.columnas||f>=flujo.filas)continue;const v=flujo.distancias[f*flujo.columnas+c];if(v>=0&&(mejor<0||v<mejor)){mejor=v;destino={c,f};}}
   return destino?Math.atan2(destino.f*TAM_CELDA+TAM_CELDA/2-e.y,destino.c*TAM_CELDA+TAM_CELDA/2-e.x):Math.atan2(j.y-e.y,j.x-e.x);
 }
