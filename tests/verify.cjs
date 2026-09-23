@@ -95,7 +95,13 @@ if (require.main === module) (async()=>{
   run(`iniciarPartida();actualizar(3.01);partida.plan=[{apareceEn:9999}];partida.siguiente=0;
     partida.enemigos=ENTRADAS.map((p,i)=>({...TIPOS_MALWARE.troyano,tipo:"troyano",x:p.x,y:p.y,vida:88,vidaMax:88,fase:i,golpe:0}));
     for(let i=0;i<60*90;i++)actualizar(1/60);`);
-  ok(run(`partida.enemigos.every(e=>{const dx=Math.max(ZONA.x-e.x,0,e.x-(ZONA.x+ZONA.w)),dy=Math.max(ZONA.y-e.y,0,e.y-(ZONA.y+ZONA.h));return Math.hypot(dx,dy)<70;})`),'troyanos grandes recorren todos los pasillos sin atascarse');
+  ok(run(`partida.enemigos.every(e=>{const dx=Math.max(ZONA.x-e.x,0,e.x-(ZONA.x+ZONA.w)),dy=Math.max(ZONA.y-e.y,0,e.y-(ZONA.y+ZONA.h));return Math.hypot(dx,dy)<70&&!tocaRect(e.x,e.y,radioParaMover(e)+3,ZONA);})`),'troyanos recorren pasillos sin atascarse y respetan la zona segura');
+  run(`iniciarPartida();actualizar(3.01);partida.jugador.x=96;partida.jugador.y=96;partida.jugador.invulnerable=99999;actualizarZona();
+    partida.plan=[{apareceEn:99999}];partida.siguiente=0;
+    partida.enemigos=ENTRADAS.map((p,i)=>({...TIPOS_MALWARE.troyano,tipo:"troyano",x:p.x,y:p.y,vida:88,vidaMax:88,fase:i,golpe:0}));
+    for(let i=0;i<60*100;i++)actualizar(1/60);`);
+  ok(run(`partida.flujos[18].distancias.some(v=>v>=0)`),'la ruta del troyano sigue activa si el jugador se pega a una pared');
+  ok(run(`partida.enemigos.every(e=>Math.hypot(e.x-partida.jugador.x,e.y-partida.jugador.y)<70)`),'troyanos llegan a una esquina desde las ocho entradas');
   run('iniciarPartida();actualizar(3.01);partida.jugador.x=1000;partida.jugador.y=800;actualizarZona();partida.plan=[{apareceEn:9999}];partida.enemigos=[{...TIPOS_MALWARE.gusano,tipo:"gusano",x:1050,y:800,vida:18,vidaMax:18,velocidad:0,golpe:0}];mouse.x=1050;mouse.y=800;disparar();actualizar(.05)');
   ok(run('partida.enemigos.length===0 && partida.puntos===15 && partida.bajas===1'),'bala mata, suma puntos y registra baja');
   ok(run('partida.particulas.length>0 && partida.textos.length>0'),'baja genera partículas y texto flotante');
