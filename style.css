@@ -72,8 +72,10 @@ button:active {
 }
 .brand-mark {
   color:var(--orange);
-  font-size:42px;
-  line-height:1;
+  display:block;
+  width:42px;
+  height:42px;
+  flex:none;
 }
 .brand-divider {
   font-size:24px;
